@@ -77,8 +77,14 @@ export default function LoginPage() {
           </div>
 
           {/* Tagline */}
-       
-      
+          <h2 className="text-white text-4xl font-bold mb-6 leading-tight uppercase tracking-wide">
+            SEEN BY<br/>EVERYONE
+          </h2>
+          
+          <p className="text-white/80 text-xl mb-16 leading-relaxed font-light">
+            Top-notch reminder system, data-driven solutions, and world-class notification services
+          </p>
+
           {/* Features */}
           <div className="space-y-8">
             <div className="border-l-2 border-white pl-6">

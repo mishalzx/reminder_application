@@ -88,7 +88,13 @@ export default function RegisterPage() {
             <h1 className="text-5xl font-bold text-white tracking-tight">REMINDER</h1>
           </div>
 
-    
+          <h2 className="text-white text-4xl font-bold mb-6 leading-tight uppercase tracking-wide">
+            SEEN BY<br/>EVERYONE
+          </h2>
+          
+          <p className="text-white/80 text-xl mb-16 leading-relaxed font-light">
+            Top-notch reminder system, data-driven solutions, and world-class notification services
+          </p>
 
           <div className="space-y-8">
             <div className="border-l-2 border-white pl-6">
