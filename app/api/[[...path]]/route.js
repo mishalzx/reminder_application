@@ -186,9 +186,9 @@ export async function POST(request) {
 
     try {
       const body = await request.json();
-      const { name, description, date, email, reminderDate, frequency } = body;
+      const { name, description, date, email, reminderDate, frequencies } = body;
 
-      if (!name || !description || !date || !email || !reminderDate || !frequency) {
+      if (!name || !description || !date || !email || !reminderDate || !frequencies || frequencies.length === 0) {
         return NextResponse.json(
           { error: 'All fields are required' },
           { status: 400 }
@@ -248,7 +248,7 @@ export async function POST(request) {
         date: parsedDate,
         email,
         reminderDate: parsedReminderDate,
-        frequency, // 'once', 'daily', 'weekly', 'monthly'
+        frequencies: frequencies, // Array: ['once', 'daily', 'weekly', 'monthly']
         status: 'active',
         createdAt: new Date()
       };
@@ -286,7 +286,7 @@ export async function PUT(request) {
     try {
       const reminderId = pathname.split('/').pop();
       const body = await request.json();
-      const { name, description, date, email, reminderDate, frequency, status } = body;
+      const { name, description, date, email, reminderDate, frequencies, status } = body;
 
       const db = await getDb();
       
@@ -330,7 +330,7 @@ export async function PUT(request) {
       if (date) updateData.date = parseLocalDateTime(date);
       if (email) updateData.email = email;
       if (reminderDate) updateData.reminderDate = parseLocalDateTime(reminderDate);
-      if (frequency) updateData.frequency = frequency;
+      if (frequencies && frequencies.length > 0) updateData.frequencies = frequencies;
       if (status) updateData.status = status;
       updateData.updatedAt = new Date();
 

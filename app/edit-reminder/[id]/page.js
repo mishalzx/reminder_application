@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { ArrowLeft, Bell, Calendar, Mail } from 'lucide-react';
+
+const PURPLE = '#6757b6';
 
 export default function EditReminderPage() {
   const [formData, setFormData] = useState({
@@ -21,7 +21,7 @@ export default function EditReminderPage() {
     email: '',
     reminderDate: '',
     reminderTime: '',
-    frequency: 'once'
+    frequencies: []
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -35,49 +35,29 @@ export default function EditReminderPage() {
       router.push('/');
       return;
     }
-
     fetchReminder();
   }, [params.id]);
 
   const fetchReminder = async () => {
     const token = localStorage.getItem('token');
-    
     try {
       const response = await fetch('/api/reminders', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch reminders');
-      }
-
+      if (!response.ok) throw new Error('Failed to fetch reminders');
       const data = await response.json();
       const reminder = data.reminders.find(r => r.id === params.id);
+      if (!reminder) throw new Error('Reminder not found');
 
-      if (!reminder) {
-        throw new Error('Reminder not found');
-      }
-
-      // Split date and time for separate inputs
-      // Extract UTC components to show the exact stored values
       const formatDateTimeForInputs = (dateString) => {
         if (!dateString) return { date: '', time: '' };
-        
-        // Create Date object from the string (MongoDB returns ISO string in UTC)
         const date = new Date(dateString);
-        
-        // Check if valid date
         if (isNaN(date.getTime())) return { date: '', time: '' };
-        
-        // Extract UTC components (not local) to preserve the exact stored values
         const year = date.getUTCFullYear();
         const month = String(date.getUTCMonth() + 1).padStart(2, '0');
         const day = String(date.getUTCDate()).padStart(2, '0');
         const hours = String(date.getUTCHours()).padStart(2, '0');
         const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-        
         return {
           date: `${year}-${month}-${day}`,
           time: `${hours}:${minutes}`
@@ -95,14 +75,10 @@ export default function EditReminderPage() {
         email: reminder.email || '',
         reminderDate: reminderDateTime.date,
         reminderTime: reminderDateTime.time,
-        frequency: reminder.frequency || 'once'
+        frequencies: reminder.frequencies || [reminder.frequency] || []
       });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
       setTimeout(() => router.push('/dashboard'), 2000);
     } finally {
       setIsFetching(false);
@@ -120,7 +96,12 @@ export default function EditReminderPage() {
     }
 
     try {
-      // Combine date and time into datetime strings
+      if (formData.frequencies.length === 0) {
+        toast({ title: 'Error', description: 'Please select at least one reminder frequency', variant: 'destructive' });
+        setIsLoading(false);
+        return;
+      }
+
       const dateTime = `${formData.date}T${formData.time}`;
       const reminderDateTime = `${formData.reminderDate}T${formData.reminderTime}`;
       
@@ -130,7 +111,7 @@ export default function EditReminderPage() {
         date: dateTime,
         email: formData.email,
         reminderDate: reminderDateTime,
-        frequency: formData.frequency
+        frequencies: formData.frequencies
       };
 
       const response = await fetch(`/api/reminders/${params.id}`, {
@@ -143,25 +124,12 @@ export default function EditReminderPage() {
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update reminder');
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update reminder');
-      }
-
-      toast({
-        title: 'Success!',
-        description: 'Reminder updated successfully',
-      });
-
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 500);
+      toast({ title: 'Success!', description: 'Reminder updated successfully' });
+      setTimeout(() => router.push('/dashboard'), 500);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -173,52 +141,49 @@ export default function EditReminderPage() {
 
   if (isFetching) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: PURPLE }}>
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading reminder...</p>
+          <div className="animate-spin h-12 w-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-white font-light">Loading reminder...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen" style={{ backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <div className="bg-white border-b-2 border-black">
+      <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
+            <button
               onClick={() => router.push('/dashboard')}
-              className="p-2 hover:bg-black hover:text-white border-2 border-black rounded-none"
+              className="h-10 w-10 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
             >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="h-12 w-12 bg-black flex items-center justify-center">
+              <ArrowLeft className="h-5 w-5" style={{ color: PURPLE }} />
+            </button>
+            <div className="h-12 w-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: PURPLE }}>
               <Bell className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-black uppercase tracking-wide">Edit Reminder</h1>
-              <p className="text-sm text-gray-600 font-light">Update your reminder details</p>
+              <h1 className="text-2xl font-bold" style={{ color: PURPLE }}>Edit Reminder</h1>
+              <p className="text-sm text-gray-500">Update your reminder details</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white border-2 border-black">
-          <div className="border-b-2 border-black px-8 py-6">
-            <h2 className="text-2xl font-bold uppercase tracking-wide text-black">Reminder Details</h2>
-            <p className="text-sm text-gray-600 mt-1 font-light">Update the information below</p>
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="border-b px-8 py-6">
+            <h2 className="text-xl font-bold" style={{ color: PURPLE }}>Reminder Details</h2>
+            <p className="text-sm text-gray-600 mt-1">Update the information below</p>
           </div>
           <div className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Name */}
-              <div className="space-y-3">
-                <Label htmlFor="name" className="text-black font-bold uppercase text-xs tracking-wider">
-                  Reminder Name *
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium" style={{ color: PURPLE }}>Reminder Name *</Label>
                 <Input
                   id="name"
                   type="text"
@@ -226,15 +191,13 @@ export default function EditReminderPage() {
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   required
-                  className="h-12 border-2 border-black rounded-none focus:ring-black"
+                  className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                 />
               </div>
 
               {/* Description */}
-              <div className="space-y-3">
-                <Label htmlFor="description" className="text-black font-bold uppercase text-xs tracking-wider">
-                  Description *
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium" style={{ color: PURPLE }}>Description *</Label>
                 <Textarea
                   id="description"
                   placeholder="Provide details about this reminder..."
@@ -242,15 +205,15 @@ export default function EditReminderPage() {
                   onChange={(e) => handleChange('description', e.target.value)}
                   required
                   rows={4}
-                  className="resize-none border-2 border-black rounded-none focus:ring-black"
+                  className="resize-none rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                 />
               </div>
 
               {/* Event Date and Time */}
-              <div className="space-y-3">
-                <Label className="text-black font-bold uppercase text-xs tracking-wider flex items-center">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center" style={{ color: PURPLE }}>
                   <Calendar className="h-4 w-4 mr-2" />
-                  Event Date & Time *
+                  Event Date & Time * (DD/MM/YYYY)
                 </Label>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
@@ -259,7 +222,8 @@ export default function EditReminderPage() {
                     value={formData.date}
                     onChange={(e) => handleChange('date', e.target.value)}
                     required
-                    className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    title="DD/MM/YYYY"
                   />
                   <Input
                     id="time"
@@ -267,16 +231,17 @@ export default function EditReminderPage() {
                     value={formData.time}
                     onChange={(e) => handleChange('time', e.target.value)}
                     required
-                    className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    title="HH:MM (24-hour format)"
                   />
                 </div>
               </div>
 
               {/* Reminder Date and Time */}
-              <div className="space-y-3">
-                <Label className="text-black font-bold uppercase text-xs tracking-wider flex items-center">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center" style={{ color: PURPLE }}>
                   <Bell className="h-4 w-4 mr-2" />
-                  Reminder Date & Time *
+                  Reminder Date & Time * (DD/MM/YYYY)
                 </Label>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
@@ -285,7 +250,8 @@ export default function EditReminderPage() {
                     value={formData.reminderDate}
                     onChange={(e) => handleChange('reminderDate', e.target.value)}
                     required
-                    className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    title="DD/MM/YYYY"
                   />
                   <Input
                     id="reminderTime"
@@ -293,14 +259,15 @@ export default function EditReminderPage() {
                     value={formData.reminderTime}
                     onChange={(e) => handleChange('reminderTime', e.target.value)}
                     required
-                    className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    title="HH:MM (24-hour format)"
                   />
                 </div>
               </div>
 
               {/* Email */}
-              <div className="space-y-3">
-                <Label htmlFor="email" className="text-black font-bold uppercase text-xs tracking-wider flex items-center">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium flex items-center" style={{ color: PURPLE }}>
                   <Mail className="h-4 w-4 mr-2" />
                   Email Address *
                 </Label>
@@ -311,51 +278,59 @@ export default function EditReminderPage() {
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   required
-                  className="h-12 border-2 border-black rounded-none focus:ring-black"
+                  className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                 />
-                <p className="text-xs text-gray-500 font-light">
-                  The reminder will be sent to this email address
-                </p>
+                <p className="text-xs text-gray-500">The reminder will be sent to this email address</p>
               </div>
 
-              {/* Frequency */}
-              <div className="space-y-3">
-                <Label htmlFor="frequency" className="text-black font-bold uppercase text-xs tracking-wider">
-                  Reminder Frequency *
-                </Label>
-                <Select
-                  value={formData.frequency}
-                  onValueChange={(value) => handleChange('frequency', value)}
-                >
-                  <SelectTrigger className="h-12 border-2 border-black rounded-none focus:ring-black">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent className="border-2 border-black rounded-none">
-                    <SelectItem value="once">Once (One-time reminder)</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-500 font-light">
-                  Choose how often you want to receive this reminder
-                </p>
+              {/* Frequency - Multi Select */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium" style={{ color: PURPLE }}>Reminder Frequency * (Select one or more)</Label>
+                <div className="space-y-3 p-4 border-2 rounded-lg" style={{ borderColor: PURPLE }}>
+                  {['once', 'daily', 'weekly', 'monthly'].map((freq) => (
+                    <div key={freq} className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id={`freq-${freq}`}
+                        checked={formData.frequencies.includes(freq)}
+                        onChange={(e) => {
+                          const newFreqs = e.target.checked
+                            ? [...formData.frequencies, freq]
+                            : formData.frequencies.filter(f => f !== freq);
+                          handleChange('frequencies', newFreqs);
+                        }}
+                        className="h-5 w-5 rounded border-gray-300 cursor-pointer"
+                        style={{ accentColor: PURPLE }}
+                      />
+                      <label htmlFor={`freq-${freq}`} className="text-sm font-medium cursor-pointer flex-1">
+                        {freq.charAt(0).toUpperCase() + freq.slice(1)} - 
+                        {freq === 'once' && ' One-time reminder only'}
+                        {freq === 'daily' && ' Every day'}
+                        {freq === 'weekly' && ' Every week'}
+                        {freq === 'monthly' && ' Every month'}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">You can select multiple frequencies</p>
               </div>
 
-              {/* Submit Button */}
-              <div className="pt-6 flex space-x-4">
+              {/* Buttons */}
+              <div className="pt-6 flex gap-4">
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-black rounded-none font-bold uppercase text-xs tracking-wider"
                   onClick={() => router.push('/dashboard')}
+                  className="flex-1 h-11 rounded-lg border-2"
+                  style={{ borderColor: PURPLE, color: PURPLE }}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 h-12 bg-black hover:bg-gray-900 text-white rounded-none font-bold uppercase tracking-wider"
                   disabled={isLoading}
+                  className="flex-1 h-11 text-white rounded-lg hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: PURPLE }}
                 >
                   {isLoading ? 'Updating...' : 'Update Reminder'}
                 </Button>

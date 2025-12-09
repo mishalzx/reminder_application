@@ -21,7 +21,7 @@ export default function CreateReminderPage() {
     email: '',
     reminderDate: '',
     reminderTime: '',
-    frequency: 'once'
+    frequencies: []
   });
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -47,13 +47,24 @@ export default function CreateReminderPage() {
       console.log('Combined reminderDateTime:', reminderDateTime);
       console.log('Browser timezone offset (minutes):', new Date().getTimezoneOffset());
       
+      // Validate at least one frequency is selected
+      if (formData.frequencies.length === 0) {
+        toast({
+          title: 'Error',
+          description: 'Please select at least one reminder frequency',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const payload = {
         name: formData.name,
         description: formData.description,
         date: dateTime,
         email: formData.email,
         reminderDate: reminderDateTime,
-        frequency: formData.frequency
+        frequencies: formData.frequencies
       };
 
       console.log('Payload being sent:', payload);
@@ -163,7 +174,7 @@ export default function CreateReminderPage() {
               <div className="space-y-3">
                 <Label className="text-black font-bold uppercase text-xs tracking-wider flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
-                  Event Date & Time *
+                  Event Date & Time * (DD/MM/YYYY)
                 </Label>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
@@ -173,6 +184,7 @@ export default function CreateReminderPage() {
                     onChange={(e) => handleChange('date', e.target.value)}
                     required
                     className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    title="DD/MM/YYYY"
                   />
                   <Input
                     id="time"
@@ -181,15 +193,17 @@ export default function CreateReminderPage() {
                     onChange={(e) => handleChange('time', e.target.value)}
                     required
                     className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    title="HH:MM (24-hour format)"
                   />
                 </div>
+                <p className="text-xs text-gray-500 font-light">Select date (day/month/year) and time (24-hour format)</p>
               </div>
 
               {/* Reminder Date and Time */}
               <div className="space-y-3">
                 <Label className="text-black font-bold uppercase text-xs tracking-wider flex items-center">
                   <Bell className="h-4 w-4 mr-2" />
-                  Reminder Date & Time *
+                  Reminder Date & Time * (DD/MM/YYYY)
                 </Label>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
@@ -199,6 +213,7 @@ export default function CreateReminderPage() {
                     onChange={(e) => handleChange('reminderDate', e.target.value)}
                     required
                     className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    title="DD/MM/YYYY"
                   />
                   <Input
                     id="reminderTime"
@@ -207,8 +222,10 @@ export default function CreateReminderPage() {
                     onChange={(e) => handleChange('reminderTime', e.target.value)}
                     required
                     className="h-12 border-2 border-black rounded-none focus:ring-black"
+                    title="HH:MM (24-hour format)"
                   />
                 </div>
+                <p className="text-xs text-gray-500 font-light">When should the reminder be sent?</p>
               </div>
 
               {/* Email */}
@@ -231,27 +248,90 @@ export default function CreateReminderPage() {
                 </p>
               </div>
 
-              {/* Frequency */}
+              {/* Frequency - Multi Select */}
               <div className="space-y-3">
-                <Label htmlFor="frequency" className="text-black font-bold uppercase text-xs tracking-wider">
-                  Reminder Frequency *
+                <Label className="text-sm font-medium" style={{ color: '#6757b6' }}>
+                  Reminder Frequency * (Select one or more)
                 </Label>
-                <Select
-                  value={formData.frequency}
-                  onValueChange={(value) => handleChange('frequency', value)}
-                >
-                  <SelectTrigger className="h-12 border-2 border-black rounded-none focus:ring-black">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent className="border-2 border-black rounded-none">
-                    <SelectItem value="once">Once (One-time reminder)</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-500 font-light">
-                  Choose how often you want to receive this reminder
+                <div className="space-y-3 p-4 border-2 rounded-lg" style={{ borderColor: '#6757b6' }}>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="freq-once"
+                      checked={formData.frequencies.includes('once')}
+                      onChange={(e) => {
+                        const newFreqs = e.target.checked
+                          ? [...formData.frequencies, 'once']
+                          : formData.frequencies.filter(f => f !== 'once');
+                        handleChange('frequencies', newFreqs);
+                      }}
+                      className="h-5 w-5 rounded border-gray-300 cursor-pointer"
+                      style={{ accentColor: '#6757b6' }}
+                    />
+                    <label htmlFor="freq-once" className="text-sm font-medium cursor-pointer flex-1">
+                      Once - One-time reminder only
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="freq-daily"
+                      checked={formData.frequencies.includes('daily')}
+                      onChange={(e) => {
+                        const newFreqs = e.target.checked
+                          ? [...formData.frequencies, 'daily']
+                          : formData.frequencies.filter(f => f !== 'daily');
+                        handleChange('frequencies', newFreqs);
+                      }}
+                      className="h-5 w-5 rounded border-gray-300 cursor-pointer"
+                      style={{ accentColor: '#6757b6' }}
+                    />
+                    <label htmlFor="freq-daily" className="text-sm font-medium cursor-pointer flex-1">
+                      Daily - Every day
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="freq-weekly"
+                      checked={formData.frequencies.includes('weekly')}
+                      onChange={(e) => {
+                        const newFreqs = e.target.checked
+                          ? [...formData.frequencies, 'weekly']
+                          : formData.frequencies.filter(f => f !== 'weekly');
+                        handleChange('frequencies', newFreqs);
+                      }}
+                      className="h-5 w-5 rounded border-gray-300 cursor-pointer"
+                      style={{ accentColor: '#6757b6' }}
+                    />
+                    <label htmlFor="freq-weekly" className="text-sm font-medium cursor-pointer flex-1">
+                      Weekly - Every week
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="freq-monthly"
+                      checked={formData.frequencies.includes('monthly')}
+                      onChange={(e) => {
+                        const newFreqs = e.target.checked
+                          ? [...formData.frequencies, 'monthly']
+                          : formData.frequencies.filter(f => f !== 'monthly');
+                        handleChange('frequencies', newFreqs);
+                      }}
+                      className="h-5 w-5 rounded border-gray-300 cursor-pointer"
+                      style={{ accentColor: '#6757b6' }}
+                    />
+                    <label htmlFor="freq-monthly" className="text-sm font-medium cursor-pointer flex-1">
+                      Monthly - Every month
+                    </label>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  You can select multiple frequencies. For example: Daily + Weekly will send reminders every day AND once per week.
                 </p>
               </div>
 
@@ -277,7 +357,7 @@ export default function CreateReminderPage() {
               <h3 className="font-bold text-black mb-2 uppercase tracking-wider">How Reminders Work</h3>
               <ul className="text-sm text-gray-600 space-y-1 font-light">
                 <li>• Reminders are checked every hour automatically</li>
-                <li>• You'll receive an email when the reminder date is reached</li>
+                <li>• You&apos;ll receive an email when the reminder date is reached</li>
                 <li>• Recurring reminders will continue until you delete them</li>
                 <li>• You can manage all reminders from your dashboard</li>
               </ul>

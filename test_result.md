@@ -230,12 +230,15 @@ backend:
     working: true
     file: "lib/cron.js"
     stuck_count: 0
-    priority: "medium"
+    priority: "high"
     needs_retesting: false
     status_history:
         - working: true
           agent: "testing"
           comment: "Cron-based reminder system tested successfully. Manual trigger works, email integration with Resend API configured. Recurring reminder logic (daily, weekly, monthly) implemented."
+        - working: true
+          agent: "main"
+          comment: "FIXED: Email sending now working correctly. Issues resolved: 1) Added 600ms delay between email sends to respect Resend's rate limit (2 req/sec), 2) Updated logic to handle both old 'frequency' field and new 'frequencies' array field, 3) Emails successfully sent to user email (mishalmmmuhammed@gmail.com). Tested manually with 3 reminders - all emails sent successfully without rate limiting errors."
 
 frontend:
   # Frontend testing not performed as per testing agent instructions
@@ -256,3 +259,5 @@ test_plan:
 agent_communication:
     - agent: "testing"
       message: "Comprehensive backend API testing completed successfully. All 8 core backend endpoints tested and working: user registration, login, profile retrieval, reminder CRUD operations, and manual reminder checking. Authentication system with JWT tokens working properly. MongoDB integration successful. Email reminder system with Resend API configured and functional. Error handling tested for invalid credentials, unauthorized access, and missing fields - all working correctly. No critical issues found. Backend is fully functional and ready for production use."
+    - agent: "main"
+      message: "CRITICAL BUG FIXED - Email Reminder System: User reported emails not being sent despite domain verification. Root causes identified and fixed: 1) Rate limiting - Resend API limits to 2 req/sec, added 600ms delay between sends, 2) Field mismatch - old reminders use 'frequency' (string), new reminders use 'frequencies' (array), updated cron logic to handle both, 3) Timing issue - user's test reminder was scheduled for future time, manually updated one reminder to past time for testing. Result: All 3 test emails to mishalmmmuhammed@gmail.com sent successfully. Email system now fully operational with verified domain mashtree.com using info@mashtree.com as sender."

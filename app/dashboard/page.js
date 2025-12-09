@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Bell, Calendar, Clock, Mail, Plus, Trash2, LogOut, Edit, TrendingUp } from 'lucide-react';
+import { formatDateDisplay } from '@/lib/dateFormatter';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,16 +81,7 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  const formatDateDisplay = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    return `${month}/${day}/${year} ${hours}:${minutes}`;
-  };
+  // Date formatting is now imported from utility
 
   const stats = {
     total: reminders.length,
@@ -210,11 +202,13 @@ export default function DashboardPage() {
               <div key={reminder.id} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <h3 className="text-xl font-bold text-gray-900">{reminder.name}</h3>
-                      <Badge className="rounded-full text-xs px-3" style={{ backgroundColor: PURPLE, color: 'white' }}>
-                        {reminder.frequency}
-                      </Badge>
+                      {(reminder.frequencies || [reminder.frequency]).map((freq, idx) => (
+                        <Badge key={idx} className="rounded-full text-xs px-3" style={{ backgroundColor: PURPLE, color: 'white' }}>
+                          {freq}
+                        </Badge>
+                      ))}
                       {reminder.status === 'active' ? (
                         <Badge className="rounded-full text-xs px-3 bg-green-500 text-white">Active</Badge>
                       ) : (

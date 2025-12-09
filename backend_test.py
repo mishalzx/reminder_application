@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import os
 
 # Get base URL from environment
-BASE_URL = "https://task-reminder-49.preview.emergentagent.com/api"
+BASE_URL = "https://notify-task.preview.emergentagent.com/api"
 
 class ReminderAppTester:
     def __init__(self):
